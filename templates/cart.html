@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Cart | Circuit Hub{% endblock %}
+
+{% block content %}
+
+<section class="page-header container">
+    <span class="eyebrow">YOUR CART</span>
+    <h1>Shopping Cart</h1>
+    <p>Review your selected IT essentials before checkout.</p>
+</section>
+
+<section class="section container">
+
+    <div id="cartContainer">
+
+        <!-- Products will appear here -->
+
+    </div>
+
+    <div id="emptyCart" class="empty-state" style="display: none;">
+
+        <div class="empty-icon">🛒</div>
+
+        <h2>Your cart is empty</h2>
+
+        <p>
+            Add some IT essentials from the shop to get started.
+        </p>
+
+        <a
+            class="btn primary"
+            href="{{ url_for('products') }}"
+        >
+            Continue Shopping
+        </a>
+
+    </div>
+
+</section>
+
+<script>
+
+function loadCart() {
+
+    const cart = JSON.parse(
+        localStorage.getItem("circuitHubCart") || "[]"
+    );
+
+    const container = document.getElementById("cartContainer");
+    const emptyCart = document.getElementById("emptyCart");
+
+    if (cart.length === 0) {
+
+        container.innerHTML = "";
+        emptyCart.style.display = "block";
+
+        return;
+    }
+
+    emptyCart.style.display = "none";
+
+    let total = 0;
+
+    let html = `
+        <div class="cart-list">
+    `;
+
+    cart.forEach((item, index) => {
+
+        const price = Number(item.unit_price);
+        const quantity = Number(item.quantity);
+        const subtotal = price * quantity;
+
+        total += subtotal;
+
+        html += `
+            <div class="cart-item">
+
+                <div class="cart-item-info">
+
+                    <h3>${item.name}</h3>
+
+                    <p>
+                        ₱${price.toFixed(2)} each
+                    </p>
+
+                </div>
+
+                <div class="cart-quantity">
+
+                    <button
+                        onclick="changeQuantity(${index}, -1)"
+                    >
+                        −
+                    </button>
+
+                    <span>${quantity}</span>
+
+                    <button
+                        onclick="changeQuantity(${index}, 1)"
+                    >
+                        +
+                    </button>
+
+                </div>
+
+                <div class="cart-subtotal">
+                    ₱${subtotal.toFixed(2)}
+                </div>
+
+                <button
+                    class="remove-cart-item"
+                    onclick="removeCartItem(${index})"
+                >
+                    Remove
+                </button>
+
+            </div>
+        `;
+    });
+
+    html += `
+        </div>
+
+        <div class="cart-summary">
+
+            <div>
+                <span>Total</span>
+                <strong>₱${total.toFixed(2)}</strong>
+            </div>
+
+            <div class="cart-actions">
+
+                <a
+                    href="{{ url_for('products') }}"
+                    class="btn secondary"
+                >
+                    Continue Shopping
+                </a>
+
+                <a
+                    href="{{ url_for('checkout') }}"
+                    class="btn primary"
+                >
+                    Proceed to Checkout
+                </a>
+
+            </div>
+
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+
+function changeQuantity(index, change) {
+
+    const cart = JSON.parse(
+        localStorage.getItem("circuitHubCart") || "[]"
+    );
+
+    cart[index].quantity += change;
+
+    if (cart[index].quantity <= 0) {
+        cart.splice(index, 1);
+    }
+
+    localStorage.setItem(
+        "circuitHubCart",
+        JSON.stringify(cart)
+    );
+
+    loadCart();
+}
+
+
+function removeCartItem(index) {
+
+    const cart = JSON.parse(
+        localStorage.getItem("circuitHubCart") || "[]"
+    );
+
+    cart.splice(index, 1);
+
+    localStorage.setItem(
+        "circuitHubCart",
+        JSON.stringify(cart)
+    );
+
+    loadCart();
+}
+
+
+loadCart();
+
+</script>
+
+{% endblock %}

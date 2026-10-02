@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} | Circuit Hub{% endblock %}
+{% block content %}
+<section class="product-detail container">
+    <div class="detail-icon">{{ product.emoji }}</div>
+    <div>
+        <span class="eyebrow">{{ product.category }}</span>
+        <h1>{{ product.name }}</h1>
+        <p>{{ product.description }}</p>
+        <div class="detail-price">₱{{ '%.2f'|format(product.price) }}</div>
+        <button class="btn primary" onclick="addDemoItem({{ product.id }}, '{{ product.name|replace("'", "\\'") }}', {{ product.price }})">Add to Cart</button>
+    </div>
+</section>
+{% endblock %}

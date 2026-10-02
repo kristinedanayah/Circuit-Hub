@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Circuit Hub | IT Essentials for Students & Teachers{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-content">
+        <span class="eyebrow">BUILT FOR IT STUDENTS &amp; TEACHERS</span>
+        <h1>Your IT Essentials,<br><span>One Click Away.</span></h1>
+        <p>Shop affordable IT essentials, discover useful software, find budget-friendly tech, and access resources made for IT students and teachers/instructors.</p>
+        <div class="actions">
+            <a class="btn primary" href="{{ url_for('products') }}">Shop Now</a>
+            <a class="btn secondary" href="{{ url_for('budget') }}">Try ₱500 Budget Finder</a>
+        </div>
+    </div>
+    <div class="hero-card">
+        <div class="chip">⚡ CIRCUIT HUB</div>
+        <h3>Student &amp; Teacher-friendly tech</h3>
+        <p>Accessories • Electronics • Storage • Programming Essentials</p>
+        <a href="{{ url_for('products') }}" class="explore-link">Start Exploring</a>
+    </div>
+</section>
+
+<section class="section">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">WHY CIRCUIT HUB?</span>
+            <h2>Everything you need for IT work.</h2>
+        </div>
+        <a href="{{ url_for('products') }}">View all products →</a>
+    </div>
+
+    <div class="feature-grid">
+        <article class="feature-card">
+            <div class="feature-icon">🛒</div>
+            <h3>IT Essentials</h3>
+            <p>Cables, storage, accessories, electronics, and other useful tech for school and teaching.</p>
+        </article>
+        <article class="feature-card">
+            <div class="feature-icon">₱</div>
+            <h3>₱500 Budget Finder</h3>
+            <p>Build a practical combination of affordable essentials within your chosen budget.</p>
+        </article>
+        <article class="feature-card">
+            <div class="feature-icon">💻</div>
+            <h3>Software Downloads</h3>
+            <p>Find official download pages for common programming and IT tools.</p>
+        </article>
+        <article class="feature-card">
+            <div class="feature-icon">🎓</div>
+            <h3>For Students &amp; Teachers</h3>
+            <p>A shared space for IT learners, instructors, projects, classes, and everyday tech needs.</p>
+        </article>
+    </div>
+</section>
+
+<section class="section dark-section">
+    <div class="section-head">
+        <div>
+            <span class="eyebrow">START HERE</span>
+            <h2>Explore Circuit Hub</h2>
+        </div>
+    </div>
+    <div class="quick-grid">
+        <a href="{{ url_for('products') }}" class="quick-card"><span>🛍️</span><b>Shop Products</b><small>Browse IT essentials</small></a>
+        <a href="{{ url_for('budget') }}" class="quick-card"><span>💰</span><b>₱500 Finder</b><small>Build a budget set</small></a>
+        <a href="{{ url_for('downloads') }}" class="quick-card"><span>⬇️</span><b>Downloads</b><small>Official IT software</small></a>
+        <a href="{{ url_for('bundles') }}" class="quick-card"><span>📦</span><b>Bundles</b><small>Ready-made essentials</small></a>
+    </div>
+</section>
+{% endblock %}

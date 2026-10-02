@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Circuit Hub - Login{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-box">
+        <div class="auth-brand">⚡ Circuit Hub</div>
+        <p class="tagline">Your IT Essentials, One Click Away.</p>
+        <h1>Welcome back!</h1>
+        <p class="auth-intro">Log in as an IT student or teacher/instructor to continue.</p>
+
+        <form action="{{ url_for('login') }}" method="POST">
+            <label for="email">Email</label>
+            <input id="email" type="email" name="email" placeholder="Enter your email" required>
+
+            <label for="password">Password</label>
+            <input id="password" type="password" name="password" placeholder="Enter your password" required>
+
+            <label for="account_type">Account Type</label>
+            <select id="account_type" name="account_type" required>
+                <option value="">Select account type</option>
+                <option value="student">IT Student</option>
+                <option value="teacher">Teacher / Instructor</option>
+                <option value="admin">Administrator</option>
+            </select>
+
+            <button type="submit" class="auth-btn">Login</button>
+        </form>
+
+        <p class="register-text">Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    </div>
+</div>
+{% endblock %}

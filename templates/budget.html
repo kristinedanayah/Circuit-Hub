@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}₱500 Budget Finder | Circuit Hub{% endblock %}
+{% block content %}
+<section class="page-header container">
+    <span class="eyebrow">SMART SHOPPING</span>
+    <h1>₱500 Budget Finder</h1>
+    <p>Choose a budget and build a combination of IT essentials that fits it.</p>
+</section>
+
+<section class="section container budget-layout">
+    <div class="budget-panel">
+        <label for="budgetInput">Your Budget</label>
+        <div class="budget-input"><span>₱</span><input id="budgetInput" type="number" min="1" value="500"></div>
+        <button class="btn primary" onclick="findBudgetSet()">Find My Set</button>
+        <p id="budgetMessage" class="budget-message"></p>
+    </div>
+    <div>
+        <div id="budgetResults" class="product-grid compact"></div>
+    </div>
+</section>
+<script>
+const budgetProducts = {{ products|tojson }};
+</script>
+{% endblock %}

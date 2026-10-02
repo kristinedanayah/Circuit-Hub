@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Registration Successful | Circuit Hub{% endblock %}
+{% block content %}
+<div class="success-page">
+    <div class="success-card">
+        <div class="success-icon">✓</div>
+        <h1>Registration Successful!</h1>
+        <p class="success-subtitle">Welcome to Circuit Hub!</p>
+
+        <div class="account-info">
+            <div class="info-item"><span>Full Name</span><strong>{{ name }}</strong></div>
+            <div class="info-item"><span>Account Type</span><strong>{{ account_type|capitalize }}</strong></div>
+            <div class="info-item"><span>School / Institution</span><strong>{{ school }}</strong></div>
+        </div>
+
+        <p class="success-message">Your account has been created. You can now continue to the login page.</p>
+        <a class="success-btn" href="{{ url_for('login') }}">Continue to Login</a>
+        <p class="bottom-text">Circuit Hub • IT Students &amp; Teachers/Instructors</p>
+    </div>
+</div>
+{% endblock %}

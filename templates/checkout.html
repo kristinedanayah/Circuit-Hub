@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout | Circuit Hub{% endblock %}
+
+{% block content %}
+
+<section class="page-header container">
+    <span class="eyebrow">CHECKOUT</span>
+    <h1>Place Your Order</h1>
+    <p>Enter your details and choose your preferred payment method.</p>
+</section>
+
+<section class="checkout-section container">
+
+    <form method="POST" action="{{ url_for('checkout') }}" id="checkoutForm">
+
+        <div class="checkout-grid">
+
+            <!-- CUSTOMER DETAILS -->
+            <div class="checkout-card">
+
+                <h2>Delivery Information</h2>
+
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input
+                        type="text"
+                        id="full_name"
+                        name="full_name"
+                        placeholder="Enter your full name"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="contact">Contact Number</label>
+                    <input
+                        type="tel"
+                        id="contact"
+                        name="contact"
+                        placeholder="09XXXXXXXXX"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Complete Address</label>
+                    <textarea
+                        id="address"
+                        name="address"
+                        rows="4"
+                        placeholder="House No., Street, Barangay, Municipality, Province"
+                        required
+                    ></textarea>
+                </div>
+
+                <h2 class="payment-title">Payment Method</h2>
+
+                <div class="payment-options">
+
+                    <label class="payment-option">
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="GCash"
+                            required
+                        >
+                        <span>📱</span>
+                        <div>
+                            <strong>GCash</strong>
+                            <small>Pay using GCash</small>
+                        </div>
+                    </label>
+
+                    <label class="payment-option">
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="Maya"
+                        >
+                        <span>💚</span>
+                        <div>
+                            <strong>Maya</strong>
+                            <small>Pay using Maya</small>
+                        </div>
+                    </label>
+
+                    <label class="payment-option">
+                        <input
+                            type="radio"
+                            name="payment_method"
+                            value="Cash on Delivery"
+                        >
+                        <span>💵</span>
+                        <div>
+                            <strong>Cash on Delivery</strong>
+                            <small>Pay when your order arrives</small>
+                        </div>
+                    </label>
+
+                </div>
+
+            </div>
+
+
+            <!-- ORDER SUMMARY -->
+            <div class="checkout-card order-summary">
+
+                <h2>Order Summary</h2>
+
+                <div id="checkoutItems">
+                    <!-- Cart items will appear here -->
+                </div>
+
+                <div class="summary-total">
+                    <span>Total Amount</span>
+                    <strong id="checkoutTotal">₱0.00</strong>
+                </div>
+
+                <input
+                    type="hidden"
+                    name="cart_items"
+                    id="cartItemsInput"
+                >
+
+                <input
+                    type="hidden"
+                    name="total_amount"
+                    id="totalAmountInput"
+                >
+
+                <button
+                    type="submit"
+                    class="place-order-btn"
+                    id="placeOrderBtn"
+                >
+                    Place Order
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</section>
+
+
+<script>
+
+function loadCheckout() {
+
+    const cart = JSON.parse(
+        localStorage.getItem("circuitHubCart") || "[]"
+    );
+
+    const container = document.getElementById("checkoutItems");
+    const totalElement = document.getElementById("checkoutTotal");
+
+    const cartInput = document.getElementById("cartItemsInput");
+    const totalInput = document.getElementById("totalAmountInput");
+
+    if (cart.length === 0) {
+
+        container.innerHTML = `
+            <div class="checkout-empty">
+                <p>Your cart is empty.</p>
+                <a href="{{ url_for('products') }}">
+                    Continue Shopping
+                </a>
+            </div>
+        `;
+
+        document.getElementById("placeOrderBtn").disabled = true;
+
+        return;
+    }
+
+    let total = 0;
+
+    let html = "";
+
+    cart.forEach(item => {
+
+        const price = Number(item.unit_price);
+        const quantity = Number(item.quantity);
+        const subtotal = price * quantity;
+
+        total += subtotal;
+
+        html += `
+            <div class="checkout-item">
+
+                <div>
+                    <strong>${item.name}</strong>
+                    <small>
+                        ${quantity} × ₱${price.toFixed(2)}
+                    </small>
+                </div>
+
+                <strong>
+                    ₱${subtotal.toFixed(2)}
+                </strong>
+
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    totalElement.textContent =
+        "₱" + total.toFixed(2);
+
+    cartInput.value =
+        JSON.stringify(cart);
+
+    totalInput.value =
+        total.toFixed(2);
+}
+
+
+loadCheckout();
+
+</script>
+
+{% endblock %}

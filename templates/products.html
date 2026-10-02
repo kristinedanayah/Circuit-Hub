@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Shop | Circuit Hub{% endblock %}
+{% block content %}
+<section class="page-header container">
+    <span class="eyebrow">CIRCUIT HUB SHOP</span>
+    <h1>IT Essentials</h1>
+    <p>Affordable tech for IT students and teachers/instructors.</p>
+</section>
+<section class="section container">
+    <div class="product-grid">
+        {% for p in products %}
+        <article class="product-card">
+            <div class="product-icon">{{ p.emoji }}</div>
+            <span class="category">{{ p.category }}</span>
+            <h3>{{ p.name }}</h3>
+            <p>{{ p.description }}</p>
+            <div class="product-bottom">
+                <strong>₱{{ '%.2f'|format(p.price) }}</strong>
+                <a class="small-btn" href="{{ url_for('product', product_id=p.id) }}">View</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

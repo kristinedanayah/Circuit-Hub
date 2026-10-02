@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Downloads | Circuit Hub{% endblock %}
+{% block content %}
+<section class="page-header container">
+    <span class="eyebrow">SOFTWARE HUB</span>
+    <h1>Official IT Software Downloads</h1>
+    <p>Quick access to official download pages for commonly used IT tools.</p>
+</section>
+<section class="section container">
+    <div class="download-grid">
+        {% for d in downloads %}
+        <article class="download-card">
+            <div class="feature-icon">💻</div>
+            <h3>{{ d.name }}</h3>
+            <p>{{ d.description }}</p>
+            <a class="small-btn" href="{{ d.url }}" target="_blank" rel="noopener">Official Download →</a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

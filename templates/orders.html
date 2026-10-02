@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Orders | Circuit Hub{% endblock %}
+{% block content %}
+<section class="page-header container">
+    <span class="eyebrow">MY ORDERS</span>
+    <h1>Orders</h1>
+    <p>Orders saved to your Circuit Hub account appear here.</p>
+</section>
+<section class="section container">
+    {% if orders %}
+        <div class="orders-list">
+        {% for order in orders %}
+            <article class="order-card">
+                <div><strong>Order #{{ order.id }}</strong><small>{{ order.created_at }}</small></div>
+                <div><span class="status">{{ order.status }}</span><strong>₱{{ '%.2f'|format(order.total_amount) }}</strong></div>
+            </article>
+        {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h2>No saved orders yet</h2>
+            <p>Once you place an order with Supabase connected, it will appear here.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

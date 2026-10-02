@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Profile | Circuit Hub{% endblock %}
+{% block content %}
+<section class="page-header container"><span class="eyebrow">ACCOUNT</span><h1>Profile</h1><p>Your account information.</p></section>
+<section class="section container profile-card">
+    {% if user %}
+    <div><span>Email</span><strong>{{ user.email }}</strong></div>
+    <div><span>Account Type</span><strong>{{ user.account_type|capitalize }}</strong></div>
+    {% else %}
+    <p>Please <a href="{{ url_for('login') }}">log in</a> to view your profile.</p>
+    {% endif %}
+</section>
+{% endblock %}

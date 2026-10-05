@@ -4,20 +4,54 @@ from decimal import Decimal, InvalidOperation
 
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session, url_for
+
 from supabase import Client, create_client
+
+# =========================================================
+# CONFIGURATION
+# =========================================================
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "change-this-secret-key")
+
+app.secret_key = os.getenv(
+    "SECRET_KEY",
+    "change-this-secret-key"
+)
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
 supabase: Client | None = None
 
+
+# =========================================================
+# SUPABASE CONNECTION
+# =========================================================
+
 if SUPABASE_URL and SUPABASE_KEY:
-    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+    try:
+        supabase = create_client(
+            SUPABASE_URL,
+            SUPABASE_KEY
+        )
+
+        print("SUPABASE CONNECTED")
+
+    except Exception as e:
+
+        print(
+            "SUPABASE CONNECTION ERROR:",
+            repr(e)
+        )
+
+        supabase = None
+
+else:
+
+    print("SUPABASE NOT CONFIGURED")
 
 
 # =========================================================
@@ -26,13 +60,20 @@ if SUPABASE_URL and SUPABASE_KEY:
 
 @app.before_request
 def require_login():
-    public_pages = {"login", "register", "static"}
+
+    public_pages = {
+        "login",
+        "register",
+        "static"
+    }
 
     if request.endpoint in public_pages:
         return
 
     if "user" not in session:
-        return redirect(url_for("login"))
+        return redirect(
+            url_for("login")
+        )
 
 
 # =========================================================
@@ -40,6 +81,7 @@ def require_login():
 # =========================================================
 
 PRODUCTS = [
+
     {
         "id": 1,
         "name": "USB Type-C Cable",
@@ -48,6 +90,7 @@ PRODUCTS = [
         "description": "Durable everyday USB Type-C cable.",
         "emoji": "🔌"
     },
+
     {
         "id": 2,
         "name": "Wireless Mouse",
@@ -56,6 +99,7 @@ PRODUCTS = [
         "description": "Compact wireless mouse for school and office work.",
         "emoji": "🖱️"
     },
+
     {
         "id": 3,
         "name": "USB Flash Drive 32GB",
@@ -64,6 +108,7 @@ PRODUCTS = [
         "description": "Portable storage for school files and projects.",
         "emoji": "💾"
     },
+
     {
         "id": 4,
         "name": "Cable Organizer",
@@ -72,6 +117,7 @@ PRODUCTS = [
         "description": "Keep your cables neat and organized.",
         "emoji": "🧩"
     },
+
     {
         "id": 5,
         "name": "Mouse Pad",
@@ -80,6 +126,7 @@ PRODUCTS = [
         "description": "Simple desk mat for comfortable mouse use.",
         "emoji": "🖥️"
     },
+
     {
         "id": 6,
         "name": "Arduino UNO Compatible Board",
@@ -87,31 +134,41 @@ PRODUCTS = [
         "price": 399,
         "description": "Beginner-friendly microcontroller board for projects.",
         "emoji": "⚡"
-    },
+    }
+
 ]
 
 
+# =========================================================
+# DOWNLOADS
+# =========================================================
+
 DOWNLOADS = [
+
     {
         "name": "Visual Studio Code",
         "description": "Code editor for programming and web development.",
         "url": "https://code.visualstudio.com/download"
     },
+
     {
         "name": "Arduino IDE",
         "description": "Official IDE for Arduino development.",
         "url": "https://www.arduino.cc/en/software"
     },
+
     {
         "name": "Python",
         "description": "Official Python downloads.",
         "url": "https://www.python.org/downloads/"
     },
+
     {
         "name": "Git",
         "description": "Official Git downloads.",
         "url": "https://git-scm.com/downloads"
-    },
+    }
+
 ]
 
 
@@ -119,27 +176,40 @@ DOWNLOADS = [
 # HELPER FUNCTIONS
 # =========================================================
 
-def get_product(product_id):
-    return next(
-        (p for p in PRODUCTS if p["id"] == product_id),
-        None
-    )
-
-
 def current_user():
+
     return session.get("user")
 
 
 def supabase_enabled():
+
     return supabase is not None
 
 
+def get_product(product_id):
+
+    try:
+        product_id = int(product_id)
+    except (TypeError, ValueError):
+        return None
+
+    return next(
+        (
+            product
+            for product in PRODUCTS
+            if product["id"] == product_id
+        ),
+        None
+    )
+
+
 # =========================================================
-# MAIN PAGES
+# HOME
 # =========================================================
 
 @app.route("/")
 def home():
+
     return render_template(
         "home.html",
         products=PRODUCTS,
@@ -147,8 +217,13 @@ def home():
     )
 
 
+# =========================================================
+# PRODUCTS
+# =========================================================
+
 @app.route("/products")
 def products():
+
     return render_template(
         "products.html",
         products=PRODUCTS,
@@ -158,6 +233,7 @@ def products():
 
 @app.route("/product/<int:product_id>")
 def product(product_id):
+
     item = get_product(product_id)
 
     if not item:
@@ -170,8 +246,13 @@ def product(product_id):
     )
 
 
+# =========================================================
+# OTHER PAGES
+# =========================================================
+
 @app.route("/budget")
 def budget():
+
     return render_template(
         "budget.html",
         products=PRODUCTS,
@@ -181,6 +262,7 @@ def budget():
 
 @app.route("/downloads")
 def downloads():
+
     return render_template(
         "downloads.html",
         downloads=DOWNLOADS,
@@ -190,6 +272,7 @@ def downloads():
 
 @app.route("/bundles")
 def bundles():
+
     return render_template(
         "bundles.html",
         user=current_user()
@@ -198,231 +281,483 @@ def bundles():
 
 @app.route("/cart")
 def cart():
+
     return render_template(
         "cart.html",
         user=current_user()
     )
 
 
-# =========================================================
-# CHECKOUT / PLACE ORDER
-# =========================================================
-
-@app.route("/checkout", methods=["GET", "POST"])
-def checkout():
-
-    if request.method == "POST":
-
-        user = current_user()
-
-        if not user:
-            flash(
-                "Please log in before placing an order.",
-                "error"
-            )
-            return redirect(url_for("login"))
-
-        # Get checkout form data
-        full_name = request.form.get(
-            "full_name",
-            ""
-        ).strip()
-
-        contact = request.form.get(
-            "contact",
-            ""
-        ).strip()
-
-        address = request.form.get(
-            "address",
-            ""
-        ).strip()
-
-        payment_method = request.form.get(
-            "payment_method",
-            ""
-        ).strip()
-
-        items_raw = request.form.get(
-            "cart_items",
-            ""
-        ).strip()
-
-        total_raw = request.form.get(
-            "total_amount",
-            "0"
-        ).strip()
-
-        # Validate checkout details
-        if not full_name or not contact or not address or not payment_method:
-            flash(
-                "Please complete all checkout details.",
-                "error"
-            )
-            return redirect(url_for("checkout"))
-
-        # Convert total
-        try:
-            total = Decimal(total_raw)
-
-        except InvalidOperation:
-            flash(
-                "Invalid order total.",
-                "error"
-            )
-            return redirect(url_for("checkout"))
-
-        # Convert cart JSON
-        try:
-            parsed_items = json.loads(items_raw)
-
-            if not isinstance(parsed_items, list) or len(parsed_items) == 0:
-                flash(
-                    "Your cart is empty.",
-                    "error"
-                )
-                return redirect(url_for("cart"))
-
-        except (json.JSONDecodeError, TypeError):
-            flash(
-                "Invalid cart data.",
-                "error"
-            )
-            return redirect(url_for("cart"))
-
-        # =================================================
-        # DEMO MODE
-        # =================================================
-
-        if not supabase_enabled():
-
-            demo_orders = session.get("orders", [])
-
-            demo_order = {
-                "id": len(demo_orders) + 1,
-                "user_id": user["id"],
-                "full_name": full_name,
-                "contact": contact,
-                "address": address,
-                "payment_method": payment_method,
-                "total_amount": float(total),
-                "status": "To Ship",
-                "items": parsed_items
-            }
-
-            demo_orders.insert(
-                0,
-                demo_order
-            )
-
-            session["orders"] = demo_orders
-            session.modified = True
-
-            flash(
-                "Order placed successfully!",
-                "success"
-            )
-
-            return redirect(url_for("orders"))
-
-        # =================================================
-        # SUPABASE MODE
-        # =================================================
-
-        try:
-
-            # Create order
-            order_result = (
-                supabase
-                .table("orders")
-                .insert({
-                    "user_id": user["id"],
-                    "full_name": full_name,
-                    "contact": contact,
-                    "address": address,
-                    "payment_method": payment_method,
-                    "total_amount": float(total),
-                    "status": "To Ship"
-                })
-                .execute()
-            )
-
-            if not order_result.data:
-                raise Exception(
-                    "Order was not created."
-                )
-
-            order_id = order_result.data[0]["id"]
-
-            # Create order items
-            order_items = []
-
-            for item in parsed_items:
-
-                order_items.append({
-                    "order_id": order_id,
-                    "product_id": item.get("product_id"),
-                    "quantity": int(
-                        item.get("quantity", 1)
-                    ),
-                    "unit_price": float(
-                        item.get("unit_price", 0)
-                    )
-                })
-
-            if order_items:
-                (
-                    supabase
-                    .table("order_items")
-                    .insert(order_items)
-                    .execute()
-                )
-
-            flash(
-                "Order placed successfully! Check your Saved Orders.",
-                "success"
-            )
-
-            return redirect(
-                url_for("orders")
-            )
-
-        except Exception as e:
-
-            print(
-                "CHECKOUT ERROR:",
-                e
-            )
-
-            flash(
-                "Order could not be saved. Please check your Supabase connection.",
-                "error"
-            )
-
-            return redirect(
-                url_for("checkout")
-            )
+@app.route("/wishlist")
+def wishlist():
 
     return render_template(
-        "checkout.html",
+        "wishlist.html",
+        user=current_user()
+    )
+
+
+@app.route("/profile")
+def profile():
+
+    return render_template(
+        "profile.html",
+        user=current_user()
+    )
+
+
+@app.route("/about")
+def about():
+
+    return render_template(
+        "about.html",
+        user=current_user()
+    )
+
+
+@app.route("/contact")
+def contact():
+
+    return render_template(
+        "contact.html",
+        user=current_user()
+    )
+
+
+@app.route("/admin")
+def admin():
+
+    return render_template(
+        "admin.html",
         user=current_user()
     )
 
 
 # =========================================================
-# SAVED ORDERS / MY ORDERS
+# CHECKOUT
+# =========================================================
+
+@app.route("/checkout", methods=["GET", "POST"])
+def checkout():
+
+    if request.method == "GET":
+
+        return render_template(
+            "checkout.html",
+            user=current_user()
+        )
+
+    user = current_user()
+
+    if not user:
+
+        flash(
+            "Please log in before placing an order.",
+            "error"
+        )
+
+        return redirect(
+            url_for("login")
+        )
+
+    # -----------------------------------------------------
+    # CUSTOMER INFORMATION
+    # -----------------------------------------------------
+
+    full_name = request.form.get(
+        "full_name",
+        ""
+    ).strip()
+
+    contact = request.form.get(
+        "contact",
+        ""
+    ).strip()
+
+    address = request.form.get(
+        "address",
+        ""
+    ).strip()
+
+    payment_method = request.form.get(
+        "payment_method",
+        ""
+    ).strip()
+
+    total_raw = request.form.get(
+        "total_amount",
+        "0"
+    ).strip()
+
+    cart_items_raw = request.form.get(
+        "cart_items",
+        "[]"
+    )
+
+    # -----------------------------------------------------
+    # VALIDATION
+    # -----------------------------------------------------
+
+    if not full_name:
+
+        flash(
+            "Please enter your full name.",
+            "error"
+        )
+
+        return redirect(
+            url_for("checkout")
+        )
+
+    if not contact:
+
+        flash(
+            "Please enter your contact number.",
+            "error"
+        )
+
+        return redirect(
+            url_for("checkout")
+        )
+
+    if not address:
+
+        flash(
+            "Please enter your delivery address.",
+            "error"
+        )
+
+        return redirect(
+            url_for("checkout")
+        )
+
+    if not payment_method:
+
+        flash(
+            "Please select a payment method.",
+            "error"
+        )
+
+        return redirect(
+            url_for("checkout")
+        )
+
+    # -----------------------------------------------------
+    # TOTAL
+    # -----------------------------------------------------
+
+    try:
+
+        total = Decimal(total_raw)
+
+    except (
+        InvalidOperation,
+        TypeError,
+        ValueError
+    ):
+
+        flash(
+            "Invalid order total.",
+            "error"
+        )
+
+        return redirect(
+            url_for("checkout")
+        )
+
+    # -----------------------------------------------------
+    # CART ITEMS
+    # -----------------------------------------------------
+
+    try:
+
+        cart_items = json.loads(
+            cart_items_raw
+        )
+
+        if not isinstance(cart_items, list):
+            cart_items = []
+
+    except Exception:
+
+        cart_items = []
+
+    if not cart_items:
+
+        flash(
+            "Your cart is empty.",
+            "error"
+        )
+
+        return redirect(
+            url_for("cart")
+        )
+
+    # =====================================================
+    # DEMO MODE
+    # =====================================================
+
+    if not supabase_enabled():
+
+        saved_orders = session.get(
+            "orders",
+            []
+        )
+
+        new_order = {
+
+            "id": len(saved_orders) + 1,
+
+            "user_id": user["id"],
+
+            "full_name": full_name,
+
+            "contact": contact,
+
+            "address": address,
+
+            "payment_method": payment_method,
+
+            "total_amount": float(total),
+
+            "status": "To Ship",
+
+            "items": cart_items
+
+        }
+
+        saved_orders.insert(
+            0,
+            new_order
+        )
+
+        session["orders"] = saved_orders
+
+        session.modified = True
+
+        flash(
+            "Order placed successfully!",
+            "success"
+        )
+
+        return redirect(
+            url_for("orders")
+        )
+
+    # =====================================================
+    # SUPABASE ORDER
+    # =====================================================
+
+    try:
+
+        print("========================================")
+        print("CREATING ORDER")
+
+        print(
+            "USER ID:",
+            user["id"]
+        )
+
+        print(
+            "USER EMAIL:",
+            user.get("email")
+        )
+
+        order_data = {
+
+            "user_id": user["id"],
+
+            "full_name": full_name,
+
+            "contact": contact,
+
+            "address": address,
+
+            "payment_method": payment_method,
+
+            "total_amount": float(total),
+
+            "status": "To Ship"
+
+        }
+
+        print(
+            "ORDER DATA:",
+            order_data
+        )
+
+        # -------------------------------------------------
+        # INSERT ORDER
+        # -------------------------------------------------
+
+        order_result = (
+
+            supabase
+
+            .table("orders")
+
+            .insert(order_data)
+
+            .execute()
+
+        )
+
+        print(
+            "ORDER RESULT:",
+            order_result.data
+        )
+
+        if not order_result.data:
+
+            raise Exception(
+                "Supabase did not return the new order."
+            )
+
+        new_order = order_result.data[0]
+
+        order_id = new_order["id"]
+
+        print(
+            "NEW ORDER ID:",
+            order_id
+        )
+
+        # -------------------------------------------------
+        # INSERT ORDER ITEMS
+        # -------------------------------------------------
+
+        order_items = []
+
+        for item in cart_items:
+
+            try:
+
+                product_id = int(
+                    item.get("product_id")
+                )
+
+                quantity = int(
+                    item.get(
+                        "quantity",
+                        1
+                    )
+                )
+
+                unit_price = float(
+                    item.get(
+                        "unit_price",
+                        0
+                    )
+                )
+
+            except (
+                TypeError,
+                ValueError
+            ):
+
+                continue
+
+            product = get_product(product_id)
+
+            if not product:
+                continue
+
+            if quantity < 1:
+                quantity = 1
+
+            order_items.append({
+
+                "order_id": order_id,
+
+                "product_id": product_id,
+
+                "quantity": quantity,
+
+                "unit_price": unit_price
+
+            })
+
+        print(
+            "ORDER ITEMS:",
+            order_items
+        )
+
+        if order_items:
+
+            items_result = (
+
+                supabase
+
+                .table("order_items")
+
+                .insert(order_items)
+
+                .execute()
+
+            )
+
+            print(
+                "ORDER ITEMS RESULT:",
+                items_result.data
+            )
+
+        print(
+            "ORDER SAVED SUCCESSFULLY"
+        )
+
+        print("========================================")
+
+        flash(
+            "Order placed successfully! Check your Saved Orders.",
+            "success"
+        )
+
+        return redirect(
+            url_for("orders")
+        )
+
+    except Exception as e:
+
+        print("========================================")
+
+        print(
+            "CHECKOUT ERROR:",
+            repr(e)
+        )
+
+        print(
+            "CHECKOUT ERROR TYPE:",
+            type(e).__name__
+        )
+
+        print("========================================")
+
+        flash(
+            "Order could not be saved. Please try again.",
+            "error"
+        )
+
+        return redirect(
+            url_for("checkout")
+        )
+
+
+# =========================================================
+# SAVED ORDERS
 # =========================================================
 
 @app.route("/orders")
 def orders():
 
     user = current_user()
-    saved_orders = []
 
     if not user:
+
         return redirect(
             url_for("login")
         )
+
+    saved_orders = []
 
     # =====================================================
     # SUPABASE
@@ -433,27 +768,116 @@ def orders():
         try:
 
             result = (
+
                 supabase
+
                 .table("orders")
+
                 .select("*")
+
                 .eq(
                     "user_id",
                     user["id"]
                 )
+
                 .order(
                     "created_at",
                     desc=True
                 )
+
                 .execute()
+
             )
 
-            saved_orders = result.data or []
+            saved_orders = (
+                result.data or []
+            )
+
+            # -------------------------------------------------
+            # LOAD ORDER ITEMS
+            # -------------------------------------------------
+
+            for order in saved_orders:
+
+                order["items"] = []
+
+                try:
+
+                    items_result = (
+
+                        supabase
+
+                        .table("order_items")
+
+                        .select("*")
+
+                        .eq(
+                            "order_id",
+                            order["id"]
+                        )
+
+                        .execute()
+
+                    )
+
+                    items = (
+                        items_result.data or []
+                    )
+
+                    for item in items:
+
+                        product = get_product(
+                            item.get("product_id")
+                        )
+
+                        if product:
+
+                            quantity = int(
+                                item.get(
+                                    "quantity",
+                                    1
+                                )
+                            )
+
+                            unit_price = float(
+                                item.get(
+                                    "unit_price",
+                                    product["price"]
+                                )
+                            )
+
+                            order["items"].append({
+
+                                "name": product["name"],
+
+                                "quantity": quantity,
+
+                                "unit_price": unit_price,
+
+                                "subtotal":
+                                    unit_price * quantity
+
+                            })
+
+                except Exception as item_error:
+
+                    print(
+                        "ORDER ITEMS ERROR:",
+                        repr(item_error)
+                    )
+
+                    order["items"] = []
+
+            print(
+                "SAVED ORDERS:",
+                saved_orders
+            )
 
         except Exception as e:
 
             print(
                 "ORDERS ERROR:",
-                e
+                repr(e)
             )
 
             flash(
@@ -461,24 +885,30 @@ def orders():
                 "error"
             )
 
-            saved_orders = []
-
     # =====================================================
     # DEMO MODE
     # =====================================================
 
     else:
 
-        saved_orders = session.get(
+        all_orders = session.get(
             "orders",
             []
         )
 
-        # Only show orders belonging to current user
         saved_orders = [
+
             order
-            for order in saved_orders
-            if order.get("user_id") == user["id"]
+
+            for order in all_orders
+
+            if str(
+                order.get("user_id")
+            )
+            == str(
+                user["id"]
+            )
+
         ]
 
     return render_template(
@@ -489,18 +919,24 @@ def orders():
 
 
 # =========================================================
-# REMOVE ORDER
+# CANCEL ORDER
 # =========================================================
 
 @app.route(
-    "/orders/<order_id>/remove",
+    "/orders/<uuid:order_id>/cancel",
     methods=["POST"]
 )
-def remove_order(order_id):
+def cancel_order(order_id):
 
     user = current_user()
 
     if not user:
+
+        flash(
+            "Please log in first.",
+            "error"
+        )
+
         return redirect(
             url_for("login")
         )
@@ -511,112 +947,122 @@ def remove_order(order_id):
 
     if not supabase_enabled():
 
-        demo_orders = session.get(
+        saved_orders = session.get(
             "orders",
             []
         )
 
-        new_orders = []
+        cancelled = False
 
-        for order in demo_orders:
-
-            # Only remove the order if:
-            # 1. It belongs to the logged-in user
-            # 2. The order ID matches
+        for order in saved_orders:
 
             if (
-                str(order.get("id")) == str(order_id)
-                and str(order.get("user_id")) == str(user["id"])
+
+                str(
+                    order.get("id")
+                )
+                == str(order_id)
+
+                and
+
+                str(
+                    order.get("user_id")
+                )
+                == str(user["id"])
+
+                and
+
+                order.get("status")
+                == "To Ship"
+
             ):
-                continue
 
-            new_orders.append(order)
+                order["status"] = "Cancelled"
 
-        session["orders"] = new_orders
+                cancelled = True
+
+                break
+
+        session["orders"] = saved_orders
+
         session.modified = True
 
-        flash(
-            "Order removed successfully.",
-            "success"
-        )
+        if cancelled:
+
+            flash(
+                "Order cancelled successfully.",
+                "success"
+            )
+
+        else:
+
+            flash(
+                "This order can no longer be cancelled.",
+                "error"
+            )
 
         return redirect(
             url_for("orders")
         )
 
     # =====================================================
-    # SUPABASE MODE
+    # SUPABASE
     # =====================================================
 
     try:
 
-        # First find the order belonging to this user
-        order_result = (
+        result = (
+
             supabase
+
             .table("orders")
-            .select("id")
+
+            .update({
+                "status": "Cancelled"
+            })
+
             .eq(
                 "id",
-                order_id
+                str(order_id)
             )
+
             .eq(
                 "user_id",
                 user["id"]
             )
+
+            .eq(
+                "status",
+                "To Ship"
+            )
+
             .execute()
+
         )
 
-        if not order_result.data:
+        if result.data:
+
             flash(
-                "Order not found.",
+                "Order cancelled successfully.",
+                "success"
+            )
+
+        else:
+
+            flash(
+                "This order can no longer be cancelled.",
                 "error"
             )
-            return redirect(
-                url_for("orders")
-            )
-
-        # Delete order items first
-        (
-            supabase
-            .table("order_items")
-            .delete()
-            .eq(
-                "order_id",
-                order_id
-            )
-            .execute()
-        )
-
-        # Delete the order itself
-        (
-            supabase
-            .table("orders")
-            .delete()
-            .eq(
-                "id",
-                order_id
-            )
-            .eq(
-                "user_id",
-                user["id"]
-            )
-            .execute()
-        )
-
-        flash(
-            "Order removed successfully.",
-            "success"
-        )
 
     except Exception as e:
 
         print(
-            "REMOVE ORDER ERROR:",
-            e
+            "CANCEL ORDER ERROR:",
+            repr(e)
         )
 
         flash(
-            "Could not remove the order.",
+            "Could not cancel the order.",
             "error"
         )
 
@@ -626,30 +1072,13 @@ def remove_order(order_id):
 
 
 # =========================================================
-# OTHER PAGES
-# =========================================================
-
-@app.route("/wishlist")
-def wishlist():
-    return render_template(
-        "wishlist.html",
-        user=current_user()
-    )
-
-
-@app.route("/profile")
-def profile():
-    return render_template(
-        "profile.html",
-        user=current_user()
-    )
-
-
-# =========================================================
 # LOGIN
 # =========================================================
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route(
+    "/login",
+    methods=["GET", "POST"]
+)
 def login():
 
     if request.method == "POST":
@@ -669,10 +1098,10 @@ def login():
             ""
         ).strip()
 
-        if not email or not password or not account_type:
+        if not email or not password:
 
             flash(
-                "Please complete all login fields.",
+                "Please enter your email and password.",
                 "error"
             )
 
@@ -680,38 +1109,86 @@ def login():
                 "login.html"
             )
 
-        # Demo mode
+        # -------------------------------------------------
+        # DEMO MODE
+        # -------------------------------------------------
+
         if not supabase_enabled():
 
             session["user"] = {
+
                 "id": "demo-user",
+
                 "email": email,
+
                 "account_type": account_type
+
             }
 
             return redirect(
                 url_for("home")
             )
 
+        # -------------------------------------------------
+        # SUPABASE LOGIN
+        # -------------------------------------------------
+
         try:
 
-            auth = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
+            result = (
 
-            user = auth.user
+                supabase
 
-            if not user:
-                raise ValueError(
-                    "Login failed"
+                .auth
+
+                .sign_in_with_password({
+
+                    "email": email,
+
+                    "password": password
+
+                })
+
+            )
+
+            if not result.user:
+
+                raise Exception(
+                    "Login failed."
+                )
+
+            # -------------------------------------------------
+            # SET SUPABASE SESSION
+            # -------------------------------------------------
+
+            if result.session:
+
+                supabase.auth.set_session(
+
+                    result.session.access_token,
+
+                    result.session.refresh_token
+
+                )
+
+                print(
+                    "SUPABASE AUTH SESSION SET"
                 )
 
             session["user"] = {
-                "id": user.id,
-                "email": user.email,
+
+                "id": result.user.id,
+
+                "email": result.user.email,
+
                 "account_type": account_type
+
             }
+
+            print(
+                "LOGGED IN USER ID:",
+                result.user.id
+            )
 
             return redirect(
                 url_for("home")
@@ -721,7 +1198,7 @@ def login():
 
             print(
                 "LOGIN ERROR:",
-                e
+                repr(e)
             )
 
             flash(
@@ -742,7 +1219,10 @@ def login():
 # REGISTER
 # =========================================================
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route(
+    "/register",
+    methods=["GET", "POST"]
+)
 def register():
 
     if request.method == "POST":
@@ -782,14 +1262,16 @@ def register():
             ""
         )
 
-        if not all([
-            name,
-            email,
-            account_type,
-            school,
-            password,
-            confirm_password
-        ]):
+        if (
+
+            not name
+            or not email
+            or not account_type
+            or not school
+            or not password
+            or not confirm_password
+
+        ):
 
             flash(
                 "Please complete all required fields.",
@@ -822,7 +1304,10 @@ def register():
                 "register.html"
             )
 
-        # Demo mode
+        # =================================================
+        # DEMO MODE
+        # =================================================
+
         if not supabase_enabled():
 
             return render_template(
@@ -832,24 +1317,48 @@ def register():
                 school=school
             )
 
+        # =================================================
+        # SUPABASE REGISTER
+        # =================================================
+
         try:
 
-            auth = supabase.auth.sign_up({
-                "email": email,
-                "password": password,
-                "options": {
-                    "data": {
-                        "full_name": name,
-                        "account_type": account_type,
-                        "school": school,
-                        "contact": contact
-                    }
-                }
-            })
+            result = (
 
-            if not auth.user:
-                raise ValueError(
-                    "Registration failed"
+                supabase
+
+                .auth
+
+                .sign_up({
+
+                    "email": email,
+
+                    "password": password,
+
+                    "options": {
+
+                        "data": {
+
+                            "full_name": name,
+
+                            "account_type": account_type,
+
+                            "school": school,
+
+                            "contact": contact
+
+                        }
+
+                    }
+
+                })
+
+            )
+
+            if not result.user:
+
+                raise Exception(
+                    "Registration failed."
                 )
 
             return render_template(
@@ -863,11 +1372,11 @@ def register():
 
             print(
                 "REGISTER ERROR:",
-                e
+                repr(e)
             )
 
             flash(
-                "Registration failed. The email may already be registered or Supabase needs configuration.",
+                "Registration failed. Please check your information.",
                 "error"
             )
 
@@ -890,48 +1399,29 @@ def logout():
     if supabase_enabled():
 
         try:
+
             supabase.auth.sign_out()
-        except Exception:
-            pass
+
+        except Exception as e:
+
+            print(
+                "LOGOUT ERROR:",
+                repr(e)
+            )
 
     session.clear()
 
     return redirect(
-        url_for("home")
+        url_for("login")
     )
 
 
 # =========================================================
-# ABOUT / CONTACT / ADMIN
-# =========================================================
-
-@app.route("/about")
-def about():
-    return render_template(
-        "about.html",
-        user=current_user()
-    )
-
-
-@app.route("/contact")
-def contact():
-    return render_template(
-        "contact.html",
-        user=current_user()
-    )
-
-
-@app.route("/admin")
-def admin():
-    return render_template(
-        "admin.html",
-        user=current_user()
-    )
-
-
-# =========================================================
-# RUN APP
+# RUN
 # =========================================================
 
 if __name__ == "__main__":
-    app.run(debug=True)
+
+    app.run(
+        debug=True
+    )

@@ -1,27 +1,201 @@
 {% extends "base.html" %}
-{% block title %}Orders | Circuit Hub{% endblock %}
+
+{% block title %}My Orders | Circuit Hub{% endblock %}
+
 {% block content %}
+
 <section class="page-header container">
-    <span class="eyebrow">MY ORDERS</span>
-    <h1>Orders</h1>
-    <p>Orders saved to your Circuit Hub account appear here.</p>
+
+    <span class="eyebrow">ORDERS</span>
+
+    <h1>My Orders</h1>
+
+    <p>
+        View your orders and their current status.
+    </p>
+
 </section>
-<section class="section container">
+
+
+<section class="orders-section container">
+
     {% if orders %}
-        <div class="orders-list">
+
+    <div class="orders-list">
+
         {% for order in orders %}
-            <article class="order-card">
-                <div><strong>Order #{{ order.id }}</strong><small>{{ order.created_at }}</small></div>
-                <div><span class="status">{{ order.status }}</span><strong>₱{{ '%.2f'|format(order.total_amount) }}</strong></div>
-            </article>
+
+        <div class="order-card">
+
+            <!-- ORDER HEADER -->
+            <div class="order-main">
+
+                <div class="order-info">
+
+                    {% if order["items"] and order["items"]|length > 0 %}
+
+                    <h2>
+                        {{ order["items"][0]["name"] }}
+
+                        {% if order["items"]|length > 1 %}
+
+                        <span class="more-items">
+                            +{{ order["items"]|length - 1 }} more
+                        </span>
+
+                        {% endif %}
+                    </h2>
+
+                    {% else %}
+
+                    <h2>
+                        Order
+                    </h2>
+
+                    {% endif %}
+
+
+                    <p class="order-number">
+                        Order #{{ "%04d"|format(loop.index) }}
+                    </p>
+
+
+                    {% if order.get("created_at") %}
+
+                    <p class="order-date">
+                        {{ order["created_at"] }}
+                    </p>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- STATUS -->
+                <div class="order-status">
+
+                    <span
+                        class="status-badge
+                        {% if order.get('status') == 'Cancelled' %}
+                            cancelled
+                        {% else %}
+                            to-ship
+                        {% endif %}
+                        "
+                    >
+                        {{ order.get("status", "To Ship") }}
+                    </span>
+
+                </div>
+
+
+                <!-- TOTAL -->
+                <div class="order-price">
+
+                    <strong>
+                        ₱{{ "%.2f"|format(order.get("total_amount", 0)|float) }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- PRODUCTS INSIDE ORDER -->
+            {% if order["items"] and order["items"]|length > 0 %}
+
+            <div class="order-items">
+
+                {% for item in order["items"] %}
+
+                <div class="order-item-row">
+
+                    <div class="item-details">
+
+                        <span class="item-name">
+                            {{ item.get("name", "Product") }}
+                        </span>
+
+                        <span class="item-quantity">
+                            × {{ item.get("quantity", 1) }}
+                        </span>
+
+                    </div>
+
+
+                    <strong>
+                        ₱{{ "%.2f"|format(item.get("subtotal", 0)|float) }}
+                    </strong>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            {% endif %}
+
+
+            <!-- CANCEL BUTTON -->
+            {% if order.get("status") == "To Ship" %}
+
+            <form
+                action="{{ url_for('cancel_order', order_id=order['id']) }}"
+                method="POST"
+                class="cancel-order-form"
+                onsubmit="return confirm('Are you sure you want to cancel this order?');"
+            >
+
+                <button
+                    type="submit"
+                    class="cancel-order-btn"
+                >
+
+                    <span>✕</span>
+
+                    Cancel Order
+
+                </button>
+
+            </form>
+
+            {% endif %}
+
+        </div>
+
         {% endfor %}
-        </div>
+
+    </div>
+
+
+    <!-- NO ORDERS -->
     {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">📦</div>
-            <h2>No saved orders yet</h2>
-            <p>Once you place an order with Supabase connected, it will appear here.</p>
+
+    <div class="empty-orders">
+
+        <div class="empty-orders-icon">
+            🛒
         </div>
+
+        <h2>
+            No orders yet
+        </h2>
+
+        <p>
+            Your placed orders will appear here.
+        </p>
+
+        <a
+            href="{{ url_for('products') }}"
+            class="shop-now-btn"
+        >
+            Start Shopping
+        </a>
+
+    </div>
+
     {% endif %}
+
 </section>
+
 {% endblock %}

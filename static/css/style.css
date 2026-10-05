@@ -584,6 +584,241 @@ button, input, select, textarea { font: inherit; }
     color: #7dc1ff;
 }
 
+.cancel-order-btn {
+    margin-top: 12px;
+    padding: 10px 16px;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    background: transparent;
+    color: #ef4444;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.cancel-order-btn {
+    margin-top: 12px;
+    padding: 10px 16px;
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    background: transparent;
+    color: #ef4444;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.cancel-order-btn:hover {
+    background: #ef4444;
+    color: white;
+}
+
+/* =========================================================
+   SAVED ORDERS
+========================================================= */
+
+.orders-section {
+    padding-bottom: 60px;
+}
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.order-card {
+    background: #111c2e;
+    border: 1px solid #263650;
+    border-radius: 16px;
+    padding: 22px;
+    transition: 0.2s ease;
+}
+
+.order-card:hover {
+    border-color: #3a4f70;
+    transform: translateY(-2px);
+}
+
+.order-main {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 25px;
+}
+
+.order-info h2 {
+    margin: 0 0 5px;
+    font-size: 17px;
+    color: #ffffff;
+}
+
+.more-items {
+    margin-left: 6px;
+    font-size: 12px;
+    color: #8ea0b8;
+    font-weight: normal;
+}
+
+.order-number {
+    margin: 0;
+    color: #8ea0b8;
+    font-size: 13px;
+}
+
+.order-date {
+    margin: 5px 0 0;
+    color: #6f829d;
+    font-size: 12px;
+}
+
+.order-status {
+    white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 7px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-badge.to-ship {
+    background: rgba(0, 200, 120, 0.12);
+    color: #24d98b;
+}
+
+.status-badge.cancelled {
+    background: rgba(255, 70, 70, 0.12);
+    color: #ff6666;
+}
+
+.order-price strong {
+    color: #ffffff;
+    font-size: 17px;
+}
+
+.order-items {
+    margin-top: 18px;
+    padding-top: 15px;
+    border-top: 1px solid #263650;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 7px 0;
+    color: #aebbd0;
+    font-size: 13px;
+}
+
+.item-details {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-name {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.item-quantity {
+    color: #8ea0b8;
+}
+
+.order-item-row strong {
+    color: #ffffff;
+}
+
+.cancel-order-form {
+    margin-top: 18px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cancel-order-btn {
+    padding: 10px 18px;
+    border: 1px solid #ff4d4d;
+    border-radius: 9px;
+    background: transparent;
+    color: #ff5c5c;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.cancel-order-btn:hover {
+    background: #ff4d4d;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.empty-orders {
+    text-align: center;
+    padding: 70px 20px;
+    background: #111c2e;
+    border: 1px solid #263650;
+    border-radius: 16px;
+}
+
+.empty-orders-icon {
+    font-size: 45px;
+    margin-bottom: 15px;
+}
+
+.empty-orders h2 {
+    margin-bottom: 8px;
+}
+
+.empty-orders p {
+    color: #8ea0b8;
+    margin-bottom: 20px;
+}
+
+.shop-now-btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #0b1220;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.shop-now-btn:hover {
+    opacity: 0.9;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .order-main {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .order-status,
+    .order-price {
+        justify-self: start;
+    }
+
+    .cancel-order-form {
+        justify-content: flex-start;
+    }
+
+    .order-item-row {
+        align-items: flex-start;
+    }
+
+}
 @media (max-width: 800px) {
 
     .checkout-grid {

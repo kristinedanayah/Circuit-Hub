@@ -1,6 +1,114 @@
 {% extends "base.html" %}
-{% block title %}Admin | Circuit Hub{% endblock %}
+
+{% block title %}Admin Dashboard | Circuit Hub{% endblock %}
+
 {% block content %}
-<section class="page-header container"><span class="eyebrow">ADMIN</span><h1>Admin Dashboard</h1><p>Management area for products, orders, users, and reviews.</p></section>
-<section class="section container"><div class="feature-grid"><article class="feature-card"><h3>Products</h3><p>Manage the catalog.</p></article><article class="feature-card"><h3>Orders</h3><p>Review customer orders.</p></article><article class="feature-card"><h3>Users</h3><p>View account profiles.</p></article><article class="feature-card"><h3>Reviews</h3><p>Review submitted feedback.</p></article></div></section>
+
+<section class="page-header container">
+    <span class="eyebrow">ADMINISTRATION</span>
+    <h1>Admin Dashboard</h1>
+    <p>Manage customer orders and monitor Circuit Hub sales.</p>
+</section>
+
+<section class="section container">
+
+    <div class="feature-grid">
+
+        <article class="feature-card">
+            <h3>Total Orders</h3>
+            <p class="admin-stat">{{ total_orders|default(0) }}</p>
+        </article>
+
+        <article class="feature-card">
+            <h3>Total Sales</h3>
+            <p class="admin-stat">
+                ₱{{ '%.2f'|format(total_sales|default(0)|float) }}
+            </p>
+        </article>
+
+        <article class="feature-card">
+            <h3>Total Customers</h3>
+            <p class="admin-stat">{{ total_customers|default(0) }}</p>
+        </article>
+
+    </div>
+
+</section>
+
+<section class="section container">
+    <h2>Customer Orders</h2>
+
+    {% if orders %}
+
+    <div class="orders-list">
+
+        {% for order in orders %}
+
+        <article class="order-card">
+
+            <div class="order-main">
+                <div class="order-info">
+                    <h3>{{ order.get('full_name', 'Customer') }}</h3>
+
+                    <p>
+                        Email:
+                        {{ order.get('customer_email', 'Not available') }}
+                    </p>
+
+                    <p>
+                        Order ID:
+                        {{ order.get('id', 'N/A') }}
+                    </p>
+
+                    <p>
+                        Date:
+                        {{ order.get('created_at', 'N/A') }}
+                    </p>
+                </div>
+
+                <div class="order-status">
+                    <span class="status-badge to-ship">
+                        {{ order.get('status', 'To Ship') }}
+                    </span>
+                </div>
+
+                <div class="order-price">
+                    <strong>
+                        ₱{{ '%.2f'|format(order.get('total_amount', 0)|float) }}
+                    </strong>
+                </div>
+            </div>
+
+            <div class="order-items">
+                <strong>Products ordered</strong>
+
+                {% if order.get('items') %}
+                    {% for item in order['items'] %}
+                    <p>
+                        {{ item.get('name', 'Product') }}
+                        × {{ item.get('quantity', 1) }}
+                    </p>
+                    {% endfor %}
+                {% else %}
+                    <p>Product details unavailable.</p>
+                {% endif %}
+            </div>
+
+        </article>
+
+        {% endfor %}
+
+    </div>
+
+    {% else %}
+
+    <div class="empty-orders">
+        <div class="empty-orders-icon">📦</div>
+        <h2>No orders found</h2>
+        <p>Customer orders will appear here when available.</p>
+    </div>
+
+    {% endif %}
+</section>
+
 {% endblock %}

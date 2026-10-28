@@ -22,6 +22,7 @@ app.secret_key = os.getenv(
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip().lower()
 
 supabase: Client | None = None
 
@@ -63,6 +64,7 @@ def require_login():
 
     public_pages = {
         "login",
+        "admin_login",
         "register",
         "static"
     }
@@ -242,6 +244,7 @@ def product(product_id):
     return render_template(
         "product.html",
         product=item,
+        reviews=[],
         user=current_user()
     )
 
@@ -324,12 +327,132 @@ def contact():
     )
 
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """Separate admin sign-in using the existing Supabase account."""
+    if request.method == "GET":
+        return render_template("admin_login.html")
+
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+
+    if not ADMIN_EMAIL:
+        flash("Admin login is not configured yet. Set ADMIN_EMAIL in Render.", "error")
+        return render_template("admin_login.html"), 503
+
+    if not supabase_enabled():
+        flash("Admin login requires the configured Supabase connection.", "error")
+        return render_template("admin_login.html"), 503
+
+    if not email or not password:
+        flash("Please enter your admin email and password.", "error")
+        return render_template("admin_login.html"), 400
+
+    try:
+        result = supabase.auth.sign_in_with_password({"email": email, "password": password})
+
+        # Never trust the account_type dropdown or user metadata for admin access.
+        authenticated_email = (result.user.email or "").strip().lower() if result.user else ""
+        if not result.user or authenticated_email != ADMIN_EMAIL:
+            flash("This account is not authorized for admin access.", "error")
+            return render_template("admin_login.html"), 403
+
+        if result.session:
+            supabase.auth.set_session(
+                result.session.access_token,
+                result.session.refresh_token
+            )
+
+        session.clear()
+        session["user"] = {
+            "id": result.user.id,
+            "email": authenticated_email,
+            "account_type": "admin"
+        }
+        return redirect(url_for("admin"))
+
+    except Exception as e:
+        print("ADMIN LOGIN ERROR:", repr(e))
+        flash("Admin login failed. Check your email and password.", "error")
+        return render_template("admin_login.html"), 401
+
+
 @app.route("/admin")
 def admin():
+    user = current_user()
+
+    # Enforce authorization on the server, even if a user changes the URL.
+    if not ADMIN_EMAIL or not user or (user.get("email") or "").strip().lower() != ADMIN_EMAIL:
+        flash("You are not authorized to access the admin dashboard.", "error")
+        return redirect(url_for("home"))
+
+    all_orders = []
+    customer_summary = {}
+    total_sales = 0.0
+    error_message = None
+
+    if supabase_enabled():
+        try:
+            result = supabase.table("orders").select("*").order("created_at", desc=True).execute()
+            all_orders = result.data or []
+
+            for order in all_orders:
+                status = str(order.get("status") or "To Ship")
+                amount = float(order.get("total_amount") or 0)
+                # Cancelled orders are not counted as sales.
+                if status.lower() != "cancelled":
+                    total_sales += amount
+
+                customer_id = str(order.get("user_id") or "unknown")
+                customer_name = (order.get("full_name") or "Customer").strip()
+                customer_email = (order.get("email") or "").strip()
+                if customer_id not in customer_summary:
+                    customer_summary[customer_id] = {
+                        "user_id": customer_id,
+                        "name": customer_name,
+                        "email": customer_email,
+                        "order_count": 0,
+                        "total_spent": 0.0
+                    }
+                customer_summary[customer_id]["order_count"] += 1
+                if status.lower() != "cancelled":
+                    customer_summary[customer_id]["total_spent"] += amount
+
+                order["items"] = []
+                try:
+                    item_result = supabase.table("order_items").select("*").eq("order_id", order["id"]).execute()
+                    for order_item in (item_result.data or []):
+                        product = get_product(order_item.get("product_id"))
+                        quantity = int(order_item.get("quantity") or 1)
+                        if product:
+                            order["items"].append({
+                                "name": product["name"],
+                                "quantity": quantity,
+                                "subtotal": float(order_item.get("unit_price") or product["price"]) * quantity
+                            })
+                except Exception as item_error:
+                    print("ADMIN ORDER ITEMS ERROR:", repr(item_error))
+
+            # Show customers with the highest number of orders first.
+            customer_summary = sorted(
+                customer_summary.values(),
+                key=lambda customer: customer["order_count"],
+                reverse=True
+            )
+        except Exception as e:
+            print("ADMIN DASHBOARD ERROR:", repr(e))
+            error_message = "Could not load order data. Check the Supabase orders and order_items tables."
+    else:
+        error_message = "Supabase is not configured. Admin dashboard requires saved Supabase orders."
 
     return render_template(
         "admin.html",
-        user=current_user()
+        user=user,
+        orders=all_orders,
+        customers=customer_summary,
+        total_orders=len(all_orders),
+        total_sales=total_sales,
+        error_message=error_message
     )
 
 

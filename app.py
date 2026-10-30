@@ -205,6 +205,44 @@ def get_product(product_id):
     )
 
 
+def get_seller_profile(user_id):
+    """Return a seller profile without breaking pages if the table is unavailable."""
+    if not supabase_enabled() or not user_id:
+        return None
+
+    try:
+        result = (
+            supabase.table("seller_profiles")
+            .select("user_id, shop_name, bio, created_at")
+            .eq("user_id", user_id)
+            .limit(1)
+            .execute()
+        )
+        return result.data[0] if result.data else None
+    except Exception as e:
+        print("SELLER PROFILE LOAD ERROR:", repr(e))
+        return None
+
+
+def get_product_reviews(product_id):
+    """Fetch public reviews for one product; return an empty list on failure."""
+    if not supabase_enabled():
+        return []
+
+    try:
+        result = (
+            supabase.table("product_reviews")
+            .select("id, product_id, reviewer_id, rating, comment, created_at")
+            .eq("product_id", int(product_id))
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return result.data or []
+    except Exception as e:
+        print("PRODUCT REVIEWS LOAD ERROR:", repr(e))
+        return []
+
+
 # =========================================================
 # HOME
 # =========================================================
@@ -241,12 +279,89 @@ def product(product_id):
     if not item:
         return "Product not found", 404
 
+    reviews = get_product_reviews(product_id)
+    review_count = len(reviews)
+    average_rating = (
+        round(sum(int(review.get("rating") or 0) for review in reviews) / review_count, 1)
+        if review_count else 0
+    )
+
     return render_template(
         "product.html",
         product=item,
-        reviews=[],
+        reviews=reviews,
+        review_count=review_count,
+        average_rating=average_rating,
         user=current_user()
     )
+
+
+@app.route("/product/<int:product_id>/review", methods=["POST"])
+def submit_review(product_id):
+    """Create or update the logged-in user's review for a product."""
+    user = current_user()
+    if not user or not user.get("id") or user.get("id") == "demo-user":
+        flash("Please log in with a real account to leave a review.", "error")
+        return redirect(url_for("login"))
+
+    if not supabase_enabled():
+        flash("Reviews require the Supabase connection.", "error")
+        return redirect(url_for("product", product_id=product_id))
+
+    item = get_product(product_id)
+    if not item:
+        return "Product not found", 404
+
+    try:
+        rating = int(request.form.get("rating", "0"))
+    except (TypeError, ValueError):
+        rating = 0
+    comment = request.form.get("comment", "").strip()
+
+    if rating < 1 or rating > 5:
+        flash("Please choose a rating from 1 to 5 stars.", "error")
+        return redirect(url_for("product", product_id=product_id))
+
+    if len(comment) > 2000:
+        flash("Your review must be 2,000 characters or fewer.", "error")
+        return redirect(url_for("product", product_id=product_id))
+
+    try:
+        # product_reviews.product_id references public.products(id), so confirm
+        # this product exists in the database before attempting the insert.
+        product_check = (
+            supabase.table("products")
+            .select("id")
+            .eq("id", product_id)
+            .limit(1)
+            .execute()
+        )
+        if not product_check.data:
+            flash(
+                "This sample product is not linked to a row in Supabase products yet, so it cannot receive reviews. We need to connect the product catalog next.",
+                "error"
+            )
+            return redirect(url_for("product", product_id=product_id))
+
+        supabase.table("product_reviews").upsert(
+            {
+                "product_id": product_id,
+                "reviewer_id": user["id"],
+                "rating": rating,
+                "comment": comment
+            },
+            on_conflict="product_id,reviewer_id"
+        ).execute()
+
+        flash("Your review has been saved.", "success")
+    except Exception as e:
+        print("SUBMIT REVIEW ERROR:", repr(e))
+        flash(
+            "Could not save your review. Check the product_reviews table policies and Supabase login session.",
+            "error"
+        )
+
+    return redirect(url_for("product", product_id=product_id))
 
 
 # =========================================================
@@ -303,9 +418,13 @@ def wishlist():
 @app.route("/profile")
 def profile():
 
+    user = current_user()
+    seller_profile = get_seller_profile(user.get("id") if user else None)
+
     return render_template(
         "profile.html",
-        user=current_user()
+        user=user,
+        seller_profile=seller_profile
     )
 
 

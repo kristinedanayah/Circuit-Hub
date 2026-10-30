@@ -1,14 +1,120 @@
+
 {% extends "base.html" %}
+
 {% block title %}{{ product.name }} | Circuit Hub{% endblock %}
+
 {% block content %}
 <section class="product-detail container">
     <div class="detail-icon">{{ product.emoji }}</div>
-    <div>
+
+    <div class="detail-info">
         <span class="eyebrow">{{ product.category }}</span>
         <h1>{{ product.name }}</h1>
         <p>{{ product.description }}</p>
-        <div class="detail-price">₱{{ '%.2f'|format(product.price) }}</div>
-        <button class="btn primary" onclick="addDemoItem({{ product.id }}, '{{ product.name|replace("'", "\\'") }}', {{ product.price }})">Add to Cart</button>
+
+        <div class="detail-price">
+            ₱{{ '%.2f'|format(product.price) }}
+        </div>
+
+        <button
+            type="button"
+            class="btn primary"
+            onclick='addDemoItem({{ product.id }}, {{ product.name|tojson }}, {{ product.price }})'>
+            Add to Cart
+        </button>
+    </div>
+</section>
+
+<section class="container product-reviews" style="margin-top: 40px; margin-bottom: 50px;">
+    <h2>Customer Reviews</h2>
+
+    <div class="review-summary" style="margin: 16px 0;">
+        {% if review_count %}
+            <p>
+                <strong style="font-size: 1.5rem;">{{ average_rating }} / 5</strong>
+                <span style="color: #f5a623; font-size: 1.3rem;">
+                    {% for star in range(1, 6) %}
+                        {% if star <= average_rating|round(0, 'common') %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                </span>
+            </p>
+            <p>{{ review_count }} review{% if review_count != 1 %}s{% endif %}</p>
+        {% else %}
+            <p>No reviews yet. Be the first to review this product!</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <div class="review-form" style="margin: 24px 0;">
+        <h3>Write a Review</h3>
+
+        {% if user and user.get('id') and user.get('id') != 'demo-user' %}
+            <form method="POST" action="{{ url_for('submit_review', product_id=product.id) }}">
+                <div style="margin-bottom: 14px;">
+                    <label for="rating"><strong>Your Rating</strong></label><br>
+                    <select id="rating" name="rating" required
+                            style="padding: 10px; margin-top: 6px;">
+                        <option value="">Choose a rating</option>
+                        <option value="5">★★★★★ - Excellent</option>
+                        <option value="4">★★★★☆ - Very Good</option>
+                        <option value="3">★★★☆☆ - Good</option>
+                        <option value="2">★★☆☆☆ - Fair</option>
+                        <option value="1">★☆☆☆☆ - Poor</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 14px;">
+                    <label for="comment"><strong>Your Comment</strong></label><br>
+                    <textarea
+                        id="comment"
+                        name="comment"
+                        rows="4"
+                        maxlength="2000"
+                        placeholder="Share your experience with this product (optional)..."
+                        style="width: 100%; max-width: 600px; padding: 12px; margin-top: 6px; box-sizing: border-box;"></textarea>
+                </div>
+
+                <button type="submit" class="btn primary">Submit Review</button>
+            </form>
+        {% else %}
+            <p>Please <a href="{{ url_for('login') }}">log in</a> with your account to leave a review.</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <div class="review-list" style="margin-top: 24px;">
+        <h3>What Customers Say</h3>
+
+        {% if reviews %}
+            {% for review in reviews %}
+                <article class="review-item"
+                         style="padding: 18px 0; border-bottom: 1px solid #ddd;">
+                    <div style="color: #f5a623; font-size: 1.2rem;">
+                        {% for star in range(1, 6) %}
+                            {% if star <= review.rating|int %}★{% else %}☆{% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <p style="margin: 6px 0;">
+                        <strong>Customer Review</strong>
+                    </p>
+
+                    {% if review.comment %}
+                        <p style="white-space: pre-wrap;">{{ review.comment }}</p>
+                    {% endif %}
+
+                    {% if review.created_at %}
+                        <small>
+                            {{ review.created_at[:10] }}
+                        </small>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        {% else %}
+            <p>No customer reviews to display yet.</p>
+        {% endif %}
     </div>
 </section>
 {% endblock %}
